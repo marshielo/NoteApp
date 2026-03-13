@@ -1,19 +1,29 @@
+'use client';
+
+import { use } from 'react';
+import { AppShell } from '@/components/layout/app-shell';
+import { EditorLayout } from '@/components/layout/editor-layout';
+import { EditorSkeleton } from '@/components/ui/skeleton';
+
 interface EditorPageProps {
   params: Promise<{ noteId: string }>;
 }
 
-export default async function EditorPage({ params }: EditorPageProps) {
-  const { noteId } = await params;
+export default function EditorPage({ params }: EditorPageProps) {
+  const { noteId } = use(params);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">Editor</h1>
-        <p className="mt-2 text-sm opacity-60">Note: {noteId}</p>
-        <p className="mt-1 text-xs opacity-40">
-          Editor page — built in MAR-7
+    <AppShell showSidebar={false} showBackButton>
+      <EditorLayout
+        saveStatus={<span>Saved</span>}
+        wordCount={<span>0 kata · 0 min</span>}
+      >
+        {/* Tiptap editor — built in MAR-7 */}
+        <EditorSkeleton />
+        <p className="mt-4 text-center text-caption text-text-muted">
+          Editor for note {noteId} — built in MAR-7
         </p>
-      </div>
-    </div>
+      </EditorLayout>
+    </AppShell>
   );
 }
