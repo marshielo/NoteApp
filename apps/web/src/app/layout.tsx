@@ -64,6 +64,14 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${sourceSerif.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
+      <head>
+        {/* Blocking script to prevent flash of wrong theme (FOUWT) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem('catatan-theme')||'system';var t=p;if(p==='system'){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );
