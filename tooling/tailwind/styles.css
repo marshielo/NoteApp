@@ -1,4 +1,85 @@
 /* ==========================================================================
    Catatan Design Tokens — Shared Tailwind v4 Theme
-   Populated in MAR-6 (Design System ticket)
+   PRD Section 9: Design System
    ========================================================================== */
+
+@theme {
+  /* ---- Spacing Scale ---- */
+  --spacing-0: 0px;
+  --spacing-0-5: 2px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+
+  /* ---- Border Radius ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* ---- Breakpoints ---- */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  /* ---- Editor ---- */
+  --width-editor: 680px;
+
+  /* ---- Sidebar ---- */
+  --width-sidebar: 260px;
+  --width-sidebar-collapsed: 60px;
+
+  /* ---- Header ---- */
+  --height-header: 56px;
+
+  /* ---- Transition ---- */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  /* ---- Colors (semantic, mapped from CSS variables) ---- */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+
+  --color-accent: var(--accent-primary);
+  --color-accent-hover: var(--accent-primary-hover);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-tertiary: var(--accent-tertiary);
+
+  --color-border: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+
+  --color-success: var(--semantic-success);
+  --color-warning: var(--semantic-warning);
+  --color-error: var(--semantic-error);
+
+  --color-editor-bg: var(--editor-bg);
+  --color-editor-text: var(--editor-text);
+
+  /* ---- Shadows (mapped from CSS variables) ---- */
+  --shadow-sm: var(--shadow-small);
+  --shadow-md: var(--shadow-medium);
+  --shadow-lg: var(--shadow-large);
+
+  /* ---- Fonts (mapped from CSS variables set by next/font) ---- */
+  --font-heading: var(--font-source-serif), 'Georgia', serif;
+  --font-body: var(--font-dm-sans), 'system-ui', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'Menlo', monospace;
+}
