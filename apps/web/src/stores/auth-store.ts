@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export type UserRole = 'free' | 'pro' | 'admin';
@@ -57,6 +57,12 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   initialize: async () => {
     set({ isLoading: true });
+
+    if (!isSupabaseConfigured()) {
+      set({ user: null, isAuthenticated: false, isLocalMode: true, isLoading: false });
+      return;
+    }
+
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
