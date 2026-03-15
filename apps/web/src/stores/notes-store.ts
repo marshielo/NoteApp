@@ -23,6 +23,11 @@ interface NotesState {
   createNote: () => Promise<string>;
   updateNote: (id: string, data: Partial<NoteRecord>) => void;
   deleteNote: (id: string) => Promise<void>;
+  duplicateNote: (id: string) => Promise<string>;
+  togglePin: (id: string) => Promise<void>;
+  archiveNote: (id: string) => Promise<void>;
+  restoreNote: (id: string) => Promise<void>;
+  permanentDelete: (id: string) => Promise<void>;
   setActiveNoteId: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -37,11 +42,7 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
   loadNotes: async () => {
     set({ isLoading: true, error: null });
     try {
-      const notes = await db.notes
-        .where('isDeleted')
-        .equals(0)
-        .reverse()
-        .sortBy('lastEditedAt');
+      const notes = await db.notes.reverse().sortBy('lastEditedAt');
       set({ notes, isLoading: false });
     } catch (err) {
       set({ error: (err as Error).message, isLoading: false });
@@ -99,6 +100,86 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
       deletedAt: now,
       updatedAt: now,
     });
+    set((state) => ({
+      notes: state.notes.map((n) =>
+        n.id === id ? { ...n, isDeleted: true, deletedAt: now, updatedAt: now } : n
+      ),
+    }));
+  },
+
+  duplicateNote: async (id) => {
+    const state = get();
+    const source = state.notes.find((n) => n.id === id);
+    if (!source) throw new Error('Note not found');
+
+    const activeNotes = state.notes.filter((n) => !n.isDeleted);
+    if (activeNotes.length >= FREE_NOTES_LIMIT) {
+      throw new Error(
+        `Kamu sudah mencapai batas ${FREE_NOTES_LIMIT} catatan. Upgrade ke Pro untuk catatan tak terbatas.`
+      );
+    }
+
+    const newId = generateId();
+    const now = new Date().toISOString();
+    const duplicate: NoteRecord = {
+      ...source,
+      id: newId,
+      title: source.title ? `${source.title} (copy)` : 'Untitled (copy)',
+      isPinned: false,
+      lastEditedAt: now,
+      lastSyncedAt: null,
+      localVersion: 1,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.notes.add(duplicate);
+    set({ notes: [duplicate, ...state.notes] });
+    return newId;
+  },
+
+  togglePin: async (id) => {
+    const note = get().notes.find((n) => n.id === id);
+    if (!note) return;
+    const now = new Date().toISOString();
+    const isPinned = !note.isPinned;
+    await db.notes.update(id, { isPinned, updatedAt: now });
+    set((state) => ({
+      notes: state.notes.map((n) =>
+        n.id === id ? { ...n, isPinned, updatedAt: now } : n
+      ),
+    }));
+  },
+
+  archiveNote: async (id) => {
+    const now = new Date().toISOString();
+    await db.notes.update(id, { isArchived: true, isPinned: false, updatedAt: now });
+    set((state) => ({
+      notes: state.notes.map((n) =>
+        n.id === id ? { ...n, isArchived: true, isPinned: false, updatedAt: now } : n
+      ),
+    }));
+  },
+
+  restoreNote: async (id) => {
+    const now = new Date().toISOString();
+    await db.notes.update(id, {
+      isArchived: false,
+      isDeleted: false,
+      deletedAt: null,
+      updatedAt: now,
+    });
+    set((state) => ({
+      notes: state.notes.map((n) =>
+        n.id === id
+          ? { ...n, isArchived: false, isDeleted: false, deletedAt: null, updatedAt: now }
+          : n
+      ),
+    }));
+  },
+
+  permanentDelete: async (id) => {
+    await db.notes.delete(id);
     set((state) => ({
       notes: state.notes.filter((n) => n.id !== id),
     }));

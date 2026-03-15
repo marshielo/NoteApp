@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useTagsStore } from '@/stores/tags-store';
 
 interface SidebarProps {
   open: boolean;
@@ -12,6 +14,7 @@ interface SidebarProps {
 const navItems = [
   {
     href: '/notes',
+    filter: null,
     label: 'Semua Catatan',
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -24,6 +27,7 @@ const navItems = [
   },
   {
     href: '/notes?filter=archived',
+    filter: 'archived',
     label: 'Arsip',
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -35,6 +39,7 @@ const navItems = [
   },
   {
     href: '/notes?filter=trash',
+    filter: 'trash',
     label: 'Sampah',
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -46,6 +51,16 @@ const navItems = [
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentFilter = searchParams.get('filter');
+  const currentTag = searchParams.get('tag');
+
+  const tags = useTagsStore((s) => s.tags);
+  const loadTags = useTagsStore((s) => s.loadTags);
+
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
 
   return (
     <>
@@ -70,7 +85,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             <span className="text-label px-3 text-text-muted">Catatan</span>
           </div>
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href === '/notes' && pathname === '/notes');
+            const isActive =
+              pathname === '/notes' && currentFilter === item.filter && !currentTag;
             return (
               <Link
                 key={item.href}
@@ -88,15 +104,40 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             );
           })}
 
-          {/* Tags section placeholder — Sprint 2 */}
+          {/* Tags section */}
           <div className="mt-6 mb-2">
             <span className="text-label px-3 text-text-muted">Tag</span>
           </div>
-          <div className="px-3 py-2">
-            <p className="text-caption text-text-muted">
-              Tags — coming in Sprint 2
-            </p>
-          </div>
+          {tags.length === 0 ? (
+            <div className="px-3 py-2">
+              <p className="text-caption italic text-text-muted">Belum ada tag</p>
+            </div>
+          ) : (
+            tags.map((tag) => {
+              const isActive = currentTag === tag.name;
+              return (
+                <Link
+                  key={tag.id}
+                  href={`/notes?tag=${encodeURIComponent(tag.name)}`}
+                  onClick={onClose}
+                  className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-body-ui transition-colors ${
+                    isActive
+                      ? 'bg-bg-tertiary text-text-primary font-medium'
+                      : 'text-text-secondary hover:bg-bg-tertiary/50 hover:text-text-primary'
+                  }`}
+                >
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  <span className="flex-1 truncate">{tag.name}</span>
+                  {tag.notesCount > 0 && (
+                    <span className="text-caption text-text-muted">{tag.notesCount}</span>
+                  )}
+                </Link>
+              );
+            })
+          )}
         </nav>
 
         {/* Bottom section */}
