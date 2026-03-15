@@ -1,28 +1,34 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState, useCallback } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { EditorLayout } from '@/components/layout/editor-layout';
-import { EditorSkeleton } from '@/components/ui/skeleton';
+import { CatatanEditor } from '@/components/editor/catatan-editor';
+import { WordCount } from '@/components/editor/word-count';
 
 interface EditorPageProps {
   params: Promise<{ noteId: string }>;
 }
 
 export default function EditorPage({ params }: EditorPageProps) {
-  const { noteId } = use(params);
+  const { noteId: _noteId } = use(params);
+  const [wordCount, setWordCount] = useState(0);
+
+  const handleUpdate = useCallback(
+    (data: { json: Record<string, unknown>; text: string; wordCount: number; title: string }) => {
+      setWordCount(data.wordCount);
+      // Auto-save integration added in MAR-8
+    },
+    []
+  );
 
   return (
     <AppShell showSidebar={false} showBackButton>
       <EditorLayout
-        saveStatus={<span>Saved</span>}
-        wordCount={<span>0 kata · 0 min</span>}
+        saveStatus={<span>Draft</span>}
+        wordCount={<WordCount wordCount={wordCount} />}
       >
-        {/* Tiptap editor — built in MAR-7 */}
-        <EditorSkeleton />
-        <p className="mt-4 text-center text-caption text-text-muted">
-          Editor for note {noteId} — built in MAR-7
-        </p>
+        <CatatanEditor onUpdate={handleUpdate} />
       </EditorLayout>
     </AppShell>
   );
