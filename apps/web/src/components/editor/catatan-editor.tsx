@@ -12,6 +12,7 @@ import Typography from '@tiptap/extension-typography';
 import CharacterCount from '@tiptap/extension-character-count';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
+import { InputRule } from '@tiptap/core';
 import { FloatingToolbar } from './floating-toolbar';
 import { SlashCommandMenu } from './slash-command-menu';
 import { useSlashCommand } from './extensions/use-slash-command';
@@ -99,10 +100,32 @@ export function CatatanEditor({
         HTMLAttributes: {
           class: 'text-accent underline decoration-accent/30 hover:decoration-accent',
         },
+      }).extend({
+        addKeyboardShortcuts() {
+          return {
+            'Mod-k': () => {
+              const previousUrl = this.editor.getAttributes('link').href as string;
+              const url = window.prompt('URL', previousUrl || 'https://');
+              if (url === null) return false;
+              if (url === '') {
+                this.editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                return true;
+              }
+              this.editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+              return true;
+            },
+          };
+        },
       }),
       Highlight.configure({
         HTMLAttributes: {
           class: 'bg-yellow-200/50 dark:bg-yellow-500/20 rounded px-0.5',
+        },
+      }).extend({
+        addKeyboardShortcuts() {
+          return {
+            'Mod-Shift-h': () => this.editor.commands.toggleHighlight(),
+          };
         },
       }),
       TaskList.configure({
@@ -112,6 +135,25 @@ export function CatatanEditor({
       }),
       TaskItem.configure({
         nested: false,
+      }).extend({
+        addInputRules() {
+          return [
+            new InputRule({
+              find: /^\[\]\s$/,
+              handler: ({ state, range }) => {
+                state.tr.delete(range.from, range.to);
+                this.editor.commands.toggleTaskList();
+              },
+            }),
+            new InputRule({
+              find: /^\[x\]\s$/,
+              handler: ({ state, range }) => {
+                state.tr.delete(range.from, range.to);
+                this.editor.commands.toggleTaskList();
+              },
+            }),
+          ];
+        },
       }),
       CodeBlockLowlight.configure({
         lowlight,
