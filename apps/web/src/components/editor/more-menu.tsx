@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TagPicker } from './tag-picker';
 import { useNotesStore } from '@/stores/notes-store';
+import { showToast } from '@/components/ui/toast';
 
 interface MoreMenuProps {
   noteId: string;
@@ -117,6 +118,17 @@ export function MoreMenu({ noteId, noteTags, isPinned, onTagsChange }: MoreMenuP
       onClick: async () => {
         await deleteNote(noteId);
         router.push('/notes');
+        showToast({
+          message: 'Catatan dihapus',
+          duration: 5000,
+          action: {
+            label: 'Urungkan',
+            onClick: async () => {
+              await useNotesStore.getState().undoDelete(noteId);
+              router.push(`/editor/${noteId}`);
+            },
+          },
+        });
       },
       variant: 'danger' as const,
     },

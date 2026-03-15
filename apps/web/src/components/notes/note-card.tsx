@@ -13,6 +13,8 @@ interface NoteCardProps {
   note: NoteRecord;
   viewMode: ViewMode;
   filter?: 'active' | 'archived' | 'trash';
+  daysLeft?: number;
+  onPermanentDelete?: (id: string) => void;
 }
 
 // SVG icons as small components
@@ -57,7 +59,7 @@ const RestoreIcon = () => (
   </svg>
 );
 
-export function NoteCard({ note, viewMode, filter = 'active' }: NoteCardProps) {
+export function NoteCard({ note, viewMode, filter = 'active', daysLeft, onPermanentDelete }: NoteCardProps) {
   const router = useRouter();
   const togglePin = useNotesStore((s) => s.togglePin);
   const archiveNote = useNotesStore((s) => s.archiveNote);
@@ -80,7 +82,7 @@ export function NoteCard({ note, viewMode, filter = 'active' }: NoteCardProps) {
         {
           label: 'Hapus permanen',
           icon: <TrashIcon />,
-          onClick: () => permanentDelete(note.id),
+          onClick: () => onPermanentDelete ? onPermanentDelete(note.id) : permanentDelete(note.id),
           variant: 'danger',
           separator: true,
         },
@@ -150,9 +152,15 @@ export function NoteCard({ note, viewMode, filter = 'active' }: NoteCardProps) {
                 {truncate(note.contentText, 80)}
               </p>
             )}
-            <span className="shrink-0 text-caption text-text-muted">
-              {formatRelativeTime(note.lastEditedAt)}
-            </span>
+            {filter === 'trash' && daysLeft !== undefined ? (
+              <span className="shrink-0 text-caption text-red-500">
+                {daysLeft === 0 ? 'Hari ini' : `${daysLeft} hari lagi`}
+              </span>
+            ) : (
+              <span className="shrink-0 text-caption text-text-muted">
+                {formatRelativeTime(note.lastEditedAt)}
+              </span>
+            )}
           </Link>
         </div>
         {contextMenu && (
@@ -215,8 +223,19 @@ export function NoteCard({ note, viewMode, filter = 'active' }: NoteCardProps) {
             <span className="text-caption text-text-muted">
               {formatRelativeTime(note.lastEditedAt)}
             </span>
-            <span className="text-text-muted">·</span>
-            <span className="text-caption text-text-muted">{note.wordCount} kata</span>
+            {filter === 'trash' && daysLeft !== undefined ? (
+              <>
+                <span className="text-text-muted">·</span>
+                <span className="text-caption text-red-500">
+                  {daysLeft === 0 ? 'Akan dihapus hari ini' : `Dihapus dalam ${daysLeft} hari`}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-text-muted">·</span>
+                <span className="text-caption text-text-muted">{note.wordCount} kata</span>
+              </>
+            )}
           </div>
         </Link>
       </div>

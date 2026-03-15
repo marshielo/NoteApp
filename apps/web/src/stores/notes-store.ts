@@ -3,6 +3,7 @@ import { db, type NoteRecord } from '@/lib/db';
 import { generateId } from '@/lib/utils';
 
 const FREE_NOTES_LIMIT = 50;
+const TRASH_PURGE_DAYS = 30;
 
 const DEFAULT_CONTENT = {
   type: 'doc',
@@ -28,6 +29,9 @@ interface NotesState {
   archiveNote: (id: string) => Promise<void>;
   restoreNote: (id: string) => Promise<void>;
   permanentDelete: (id: string) => Promise<void>;
+  emptyTrash: () => Promise<void>;
+  autoPurgeTrash: () => Promise<void>;
+  undoDelete: (id: string) => Promise<void>;
   setActiveNoteId: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -182,6 +186,46 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
     await db.notes.delete(id);
     set((state) => ({
       notes: state.notes.filter((n) => n.id !== id),
+    }));
+  },
+
+  emptyTrash: async () => {
+    const trashed = get().notes.filter((n) => n.isDeleted);
+    const ids = trashed.map((n) => n.id);
+    await db.notes.bulkDelete(ids);
+    set((state) => ({
+      notes: state.notes.filter((n) => !n.isDeleted),
+    }));
+  },
+
+  autoPurgeTrash: async () => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - TRASH_PURGE_DAYS);
+    const cutoffISO = cutoff.toISOString();
+
+    const toPurge = get().notes.filter(
+      (n) => n.isDeleted && n.deletedAt && n.deletedAt < cutoffISO
+    );
+    if (toPurge.length === 0) return;
+
+    const ids = toPurge.map((n) => n.id);
+    await db.notes.bulkDelete(ids);
+    set((state) => ({
+      notes: state.notes.filter((n) => !ids.includes(n.id)),
+    }));
+  },
+
+  undoDelete: async (id) => {
+    const now = new Date().toISOString();
+    await db.notes.update(id, {
+      isDeleted: false,
+      deletedAt: null,
+      updatedAt: now,
+    });
+    set((state) => ({
+      notes: state.notes.map((n) =>
+        n.id === id ? { ...n, isDeleted: false, deletedAt: null, updatedAt: now } : n
+      ),
     }));
   },
 

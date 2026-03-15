@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { NoteListSkeleton } from '@/components/ui/skeleton';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { NoteCard } from '@/components/notes/note-card';
 import { NotesToolbar } from '@/components/notes/notes-toolbar';
 import { SearchBar } from '@/components/notes/search-bar';
@@ -14,7 +15,28 @@ import { useSearch } from '@/hooks/use-search';
 
 type Filter = 'active' | 'archived' | 'trash';
 
+function daysUntilPurge(deletedAt: string | null): number {
+  if (!deletedAt) return 30;
+  const deleted = new Date(deletedAt);
+  const purgeDate = new Date(deleted);
+  purgeDate.setDate(purgeDate.getDate() + 30);
+  const now = new Date();
+  return Math.max(0, Math.ceil((purgeDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
 export default function NotesPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-4 lg:p-6">
+        <NoteListSkeleton count={6} />
+      </div>
+    }>
+      <NotesPageContent />
+    </Suspense>
+  );
+}
+
+function NotesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const filterParam = searchParams.get('filter');
@@ -24,6 +46,8 @@ export default function NotesPage() {
   const isLoading = useNotesStore((s) => s.isLoading);
   const loadNotes = useNotesStore((s) => s.loadNotes);
   const createNote = useNotesStore((s) => s.createNote);
+  const emptyTrash = useNotesStore((s) => s.emptyTrash);
+  const autoPurgeTrash = useNotesStore((s) => s.autoPurgeTrash);
 
   const viewMode = useUIStore((s) => s.viewMode);
   const sortOrder = useUIStore((s) => s.sortOrder);
@@ -32,10 +56,15 @@ export default function NotesPage() {
   const { query, debouncedQuery, results, isSearching, handleQueryChange, clearSearch } =
     useSearch(notes);
 
+  const [emptyTrashDialog, setEmptyTrashDialog] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
   useEffect(() => {
-    loadNotes();
+    loadNotes().then(() => {
+      autoPurgeTrash();
+    });
     hydrate();
-  }, [loadNotes, hydrate]);
+  }, [loadNotes, hydrate, autoPurgeTrash]);
 
   const filter: Filter =
     filterParam === 'archived' ? 'archived' : filterParam === 'trash' ? 'trash' : 'active';
@@ -58,6 +87,9 @@ export default function NotesPage() {
 
     // Sort
     const sorted = [...filtered].sort((a, b) => {
+      if (filter === 'trash') {
+        return new Date(b.deletedAt || 0).getTime() - new Date(a.deletedAt || 0).getTime();
+      }
       switch (sortOrder) {
         case 'created':
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -88,6 +120,18 @@ export default function NotesPage() {
     }
   };
 
+  const handleEmptyTrash = async () => {
+    await emptyTrash();
+    setEmptyTrashDialog(false);
+  };
+
+  const handlePermanentDelete = async () => {
+    if (deleteConfirm) {
+      await useNotesStore.getState().permanentDelete(deleteConfirm);
+      setDeleteConfirm(null);
+    }
+  };
+
   const pageTitle = tagParam
     ? `Tag: ${tagParam}`
     : filter === 'archived'
@@ -106,24 +150,45 @@ export default function NotesPage() {
   const emptySubtext =
     filter === 'active' && !tagParam ? 'Mulai menulis catatan pertamamu' : undefined;
 
+  const trashedCount = filteredNotes.length;
+
   return (
     <AppShell>
       <div className="p-4 lg:p-6">
         {/* Page header */}
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-heading-2 text-text-primary">{pageTitle}</h1>
-          {filter === 'active' && !tagParam && (
-            <button
-              onClick={handleNewNote}
-              className="flex h-9 items-center gap-1.5 rounded-lg bg-accent px-4 text-caption font-medium text-white transition-colors hover:bg-accent-hover sm:hidden"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 2V12M2 7H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              Baru
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {filter === 'trash' && trashedCount > 0 && (
+              <button
+                onClick={() => setEmptyTrashDialog(true)}
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-red-300 px-4 text-caption font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                Kosongkan Trash
+              </button>
+            )}
+            {filter === 'active' && !tagParam && (
+              <button
+                onClick={handleNewNote}
+                className="flex h-9 items-center gap-1.5 rounded-lg bg-accent px-4 text-caption font-medium text-white transition-colors hover:bg-accent-hover sm:hidden"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 2V12M2 7H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                Baru
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Trash info banner */}
+        {filter === 'trash' && trashedCount > 0 && (
+          <div className="mb-4 rounded-lg border border-border bg-bg-tertiary px-4 py-3">
+            <p className="text-caption text-text-secondary">
+              Catatan di trash akan dihapus otomatis setelah 30 hari.
+            </p>
+          </div>
+        )}
 
         {/* Search bar */}
         {filter === 'active' && (
@@ -136,7 +201,7 @@ export default function NotesPage() {
         ) : (
           <>
             {/* Toolbar */}
-            <NotesToolbar count={filteredNotes.length} />
+            {filter !== 'trash' && <NotesToolbar count={filteredNotes.length} />}
 
             {/* Content */}
             {isLoading ? (
@@ -168,13 +233,40 @@ export default function NotesPage() {
                 }
               >
                 {filteredNotes.map((note) => (
-                  <NoteCard key={note.id} note={note} viewMode={viewMode} filter={filter} />
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    viewMode={viewMode}
+                    filter={filter}
+                    daysLeft={filter === 'trash' ? daysUntilPurge(note.deletedAt) : undefined}
+                    onPermanentDelete={filter === 'trash' ? (id) => setDeleteConfirm(id) : undefined}
+                  />
                 ))}
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* Empty Trash confirmation dialog */}
+      <ConfirmDialog
+        open={emptyTrashDialog}
+        title="Kosongkan Trash?"
+        message={`${trashedCount} catatan akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.`}
+        confirmLabel="Kosongkan"
+        onConfirm={handleEmptyTrash}
+        onCancel={() => setEmptyTrashDialog(false)}
+      />
+
+      {/* Single permanent delete confirmation */}
+      <ConfirmDialog
+        open={deleteConfirm !== null}
+        title="Hapus permanen?"
+        message="Catatan ini akan dihapus secara permanen dan tidak bisa dikembalikan."
+        confirmLabel="Hapus Permanen"
+        onConfirm={handlePermanentDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </AppShell>
   );
 }
