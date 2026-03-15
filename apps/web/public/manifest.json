@@ -1,0 +1,54 @@
+{
+  "name": "Catatan - Beautiful Note-Taking",
+  "short_name": "Catatan",
+  "description": "Aplikasi catatan yang indah dan cepat untuk menulis ide, daftar, dan cerita.",
+  "start_url": "/notes",
+  "display": "standalone",
+  "background_color": "#F5F1EC",
+  "theme_color": "#C4785B",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "id",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Catatan Baru",
+      "short_name": "Baru",
+      "url": "/editor/new",
+      "icons": []
+    },
+    {
+      "name": "Semua Catatan",
+      "short_name": "Catatan",
+      "url": "/notes",
+      "icons": []
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Source_Serif_4, DM_Sans, JetBrains_Mono } from 'next/font/google';
+import { ToastContainer } from '@/components/ui/toast';
 import './globals.css';
 
 /* -------------------------------------------------------------------------- */
@@ -40,6 +41,12 @@ export const metadata: Metadata = {
     'Aplikasi catatan yang indah dan simpel untuk menulis, mengorganisir, dan menyimpan ide-ide kamu.',
   keywords: ['catatan', 'notes', 'note-taking', 'pwa', 'Indonesia'],
   authors: [{ name: 'Catatan Team' }],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Catatan',
+  },
 };
 
 export const viewport: Viewport = {
@@ -72,7 +79,15 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <ToastContainer />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js')})}`,
+          }}
+        />
+      </body>
     </html>
   );
 }
