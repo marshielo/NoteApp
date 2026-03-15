@@ -6,6 +6,7 @@ import { EditorLayout } from '@/components/layout/editor-layout';
 import { CatatanEditor } from '@/components/editor/catatan-editor';
 import { WordCount } from '@/components/editor/word-count';
 import { SaveStatus } from '@/components/editor/save-status';
+import { MoreMenu } from '@/components/editor/more-menu';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { useNotesStore } from '@/stores/notes-store';
 import { db } from '@/lib/db';
@@ -24,6 +25,8 @@ export default function EditorPage({ params }: EditorPageProps) {
   const [wordCount, setWordCount] = useState(0);
   const [initialContent, setInitialContent] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [noteTags, setNoteTags] = useState<string[]>([]);
+  const [isPinned, setIsPinned] = useState(false);
   const updateNote = useNotesStore((s) => s.updateNote);
 
   const { saveStatus, scheduleSave, forceSave } = useAutoSave({
@@ -31,7 +34,6 @@ export default function EditorPage({ params }: EditorPageProps) {
     debounceMs: 1500,
   });
 
-  // Load note from IndexedDB on mount
   useEffect(() => {
     async function loadNote() {
       try {
@@ -39,10 +41,9 @@ export default function EditorPage({ params }: EditorPageProps) {
         if (note) {
           setInitialContent(note.content);
           setWordCount(note.wordCount);
+          setNoteTags(note.tags || []);
+          setIsPinned(note.isPinned);
         } else {
-          // Note doesn't exist yet — create it
-          const createNote = useNotesStore.getState().createNote;
-          // If noteId is "new", create a new note; otherwise load might fail
           setInitialContent(null);
         }
       } catch (err) {
@@ -67,7 +68,6 @@ export default function EditorPage({ params }: EditorPageProps) {
       const wc = calculateWordCount(contentText);
       const readingTime = calculateReadingTime(wc);
 
-      // Update Zustand store (in-memory)
       updateNote(noteId, {
         title: data.title,
         content: data.json,
@@ -76,7 +76,6 @@ export default function EditorPage({ params }: EditorPageProps) {
         readingTimeMinutes: readingTime,
       });
 
-      // Schedule IndexedDB save with debounce
       scheduleSave({
         title: data.title,
         content: data.json,
@@ -88,7 +87,11 @@ export default function EditorPage({ params }: EditorPageProps) {
     [noteId, updateNote, scheduleSave]
   );
 
-  // Force save on unmount
+  const handleTagsChange = useCallback((tags: string[]) => {
+    setNoteTags(tags);
+    updateNote(noteId, { tags });
+  }, [noteId, updateNote]);
+
   useEffect(() => {
     return () => {
       forceSave();
@@ -118,7 +121,28 @@ export default function EditorPage({ params }: EditorPageProps) {
       <EditorLayout
         saveStatus={<SaveStatus status={saveStatus} />}
         wordCount={<WordCount wordCount={wordCount} />}
+        moreMenu={
+          <MoreMenu
+            noteId={noteId}
+            noteTags={noteTags}
+            isPinned={isPinned}
+            onTagsChange={handleTagsChange}
+          />
+        }
       >
+        {noteTags.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {noteTags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-accent-tertiary/15 px-2.5 py-0.5 text-caption text-accent-tertiary"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         <CatatanEditor
           content={initialContent ?? undefined}
           onUpdate={handleUpdate}
