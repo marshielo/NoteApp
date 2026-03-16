@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { NoteListSkeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { UpgradeNudge } from '@/components/ui/upgrade-nudge';
 import { NoteCard } from '@/components/notes/note-card';
 import { NotesToolbar } from '@/components/notes/notes-toolbar';
 import { SearchBar } from '@/components/notes/search-bar';
@@ -58,6 +59,7 @@ function NotesPageContent() {
 
   const [emptyTrashDialog, setEmptyTrashDialog] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showUpgradeNudge, setShowUpgradeNudge] = useState(false);
 
   useEffect(() => {
     loadNotes().then(() => {
@@ -115,8 +117,8 @@ function NotesPageContent() {
     try {
       const noteId = await createNote();
       router.push(`/editor/${noteId}`);
-    } catch (err) {
-      alert((err as Error).message);
+    } catch {
+      setShowUpgradeNudge(true);
     }
   };
 
@@ -187,6 +189,18 @@ function NotesPageContent() {
             <p className="text-caption text-text-secondary">
               Catatan di trash akan dihapus otomatis setelah 30 hari.
             </p>
+          </div>
+        )}
+
+        {/* Sync promotion banner (free users) */}
+        {filter === 'active' && !tagParam && filteredNotes.length > 0 && (
+          <div className="mb-4">
+            <UpgradeNudge
+              trigger="sync"
+              variant="banner"
+              title="Sinkronkan catatanmu"
+              description="Upgrade ke Pro untuk menyinkronkan catatan ke cloud dan mengakses dari perangkat lain."
+            />
           </div>
         )}
 
@@ -267,6 +281,17 @@ function NotesPageContent() {
         onConfirm={handlePermanentDelete}
         onCancel={() => setDeleteConfirm(null)}
       />
+
+      {/* Upgrade nudge when note limit reached */}
+      {showUpgradeNudge && (
+        <UpgradeNudge
+          trigger="note_limit"
+          variant="modal"
+          title="Batas catatan tercapai"
+          description="Kamu sudah mencapai batas 50 catatan di paket gratis. Upgrade ke Pro untuk catatan tak terbatas."
+          onDismiss={() => setShowUpgradeNudge(false)}
+        />
+      )}
     </AppShell>
   );
 }
