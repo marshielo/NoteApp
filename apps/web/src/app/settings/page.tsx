@@ -9,6 +9,7 @@ import { useUIStore } from '@/stores/ui-store';
 import { db } from '@/lib/db';
 import { tiptapToMarkdown, tiptapToPlainText, sanitizeFilename } from '@/lib/export-utils';
 import { showToast } from '@/components/ui/toast';
+import { FONT_PRESETS, type FontPresetId, getSavedPreset, savePreset, loadPresetFonts, getPreset } from '@/lib/font-presets';
 
 const APP_VERSION = '0.1.0';
 
@@ -84,6 +85,9 @@ function SettingsPageContent() {
           <h2 className="text-body-ui font-semibold text-text-primary">Tampilan</h2>
           <div className="mt-4 rounded-xl border border-border bg-bg-elevated p-6">
             <ThemeSelector />
+            <div className="mt-6 border-t border-border pt-6">
+              <FontPresetSelector />
+            </div>
           </div>
         </section>
 
@@ -302,6 +306,85 @@ function ThemeSelector() {
             {opt.label}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---- Font Preset Selector sub-component ---- */
+
+function FontPresetSelector() {
+  const [activePreset, setActivePreset] = useState<FontPresetId>('classic');
+
+  useEffect(() => {
+    setActivePreset(getSavedPreset());
+  }, []);
+
+  const handleSelect = (id: FontPresetId) => {
+    const preset = getPreset(id);
+
+    // Free users can only use Classic
+    if (!preset.isFree) {
+      showToast({
+        message: 'Fitur Pro — upgrade untuk font preset lainnya',
+        action: { label: 'Upgrade', onClick: () => { window.location.href = '/#pricing'; } },
+      });
+      return;
+    }
+
+    setActivePreset(id);
+    savePreset(id);
+    loadPresetFonts(preset);
+
+    // Apply to editor CSS variables
+    document.documentElement.style.setProperty('--editor-heading-font', preset.headingFont);
+    document.documentElement.style.setProperty('--editor-body-font', preset.bodyFont);
+  };
+
+  return (
+    <div>
+      <p className="text-caption font-medium text-text-secondary">Font Preset</p>
+      <div className="mt-3 space-y-2">
+        {FONT_PRESETS.map((preset) => {
+          const isActive = activePreset === preset.id;
+          return (
+            <button
+              key={preset.id}
+              onClick={() => handleSelect(preset.id)}
+              className={`w-full rounded-lg border px-4 py-3 text-left transition-all ${
+                isActive
+                  ? 'border-accent bg-accent/10'
+                  : 'border-border hover:border-border-secondary'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-caption font-medium text-text-primary">{preset.name}</span>
+                  {!preset.isFree && (
+                    <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-accent">
+                      PRO
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-text-muted">{preset.vibe}</span>
+              </div>
+              <div className="mt-2">
+                <p
+                  className="text-[15px] font-semibold text-text-primary"
+                  style={{ fontFamily: preset.headingFont }}
+                >
+                  {preset.previewHeading}
+                </p>
+                <p
+                  className="mt-0.5 text-[13px] text-text-secondary"
+                  style={{ fontFamily: preset.bodyFont }}
+                >
+                  {preset.previewBody}
+                </p>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

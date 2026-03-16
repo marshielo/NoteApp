@@ -10,6 +10,7 @@ import { MoreMenu } from '@/components/editor/more-menu';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { useNotesStore } from '@/stores/notes-store';
 import { db } from '@/lib/db';
+import { getSavedPreset, getPreset, loadPresetFonts } from '@/lib/font-presets';
 import {
   extractTextFromTiptapJSON,
   calculateWordCount,
@@ -57,6 +58,13 @@ export default function EditorPage({ params }: EditorPageProps) {
       }
     }
     loadNote();
+
+    // Load saved font preset
+    const presetId = getSavedPreset();
+    const preset = getPreset(presetId);
+    loadPresetFonts(preset);
+    document.documentElement.style.setProperty('--editor-heading-font', preset.headingFont);
+    document.documentElement.style.setProperty('--editor-body-font', preset.bodyFont);
   }, [noteId]);
 
   const handleUpdate = useCallback(
