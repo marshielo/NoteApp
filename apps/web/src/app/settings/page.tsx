@@ -10,6 +10,7 @@ import { db } from '@/lib/db';
 import { tiptapToMarkdown, tiptapToPlainText, sanitizeFilename } from '@/lib/export-utils';
 import { showToast } from '@/components/ui/toast';
 import { FONT_PRESETS, type FontPresetId, getSavedPreset, savePreset, loadPresetFonts, getPreset } from '@/lib/font-presets';
+import { ACCENT_PRESETS, DEFAULT_ACCENT, getSavedAccent, saveAccent, applyAccent, isValidHex } from '@/lib/accent-colors';
 
 const APP_VERSION = '0.1.0';
 
@@ -87,6 +88,9 @@ function SettingsPageContent() {
             <ThemeSelector />
             <div className="mt-6 border-t border-border pt-6">
               <FontPresetSelector />
+            </div>
+            <div className="mt-6 border-t border-border pt-6">
+              <AccentColorPicker />
             </div>
           </div>
         </section>
@@ -386,6 +390,109 @@ function FontPresetSelector() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* ---- Accent Color Picker sub-component ---- */
+
+function AccentColorPicker() {
+  const [activeColor, setActiveColor] = useState(DEFAULT_ACCENT);
+  const [customHex, setCustomHex] = useState('');
+  const IS_PRO = false; // TODO: wire to subscription
+
+  useEffect(() => {
+    const saved = getSavedAccent();
+    setActiveColor(saved);
+    applyAccent(saved);
+  }, []);
+
+  const handleSelect = (hex: string) => {
+    if (!IS_PRO && hex !== DEFAULT_ACCENT) {
+      showToast({
+        message: 'Fitur Pro — upgrade untuk warna aksen kustom',
+        action: { label: 'Upgrade', onClick: () => { window.location.href = '/#pricing'; } },
+      });
+      return;
+    }
+    setActiveColor(hex);
+    saveAccent(hex);
+    applyAccent(hex);
+  };
+
+  const handleCustomSubmit = () => {
+    if (!isValidHex(customHex)) {
+      showToast({ message: 'Masukkan kode hex yang valid (contoh: #2D7CC4)' });
+      return;
+    }
+    handleSelect(customHex);
+  };
+
+  const handleReset = () => {
+    setActiveColor(DEFAULT_ACCENT);
+    setCustomHex('');
+    saveAccent(DEFAULT_ACCENT);
+    applyAccent(DEFAULT_ACCENT);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <p className="text-caption font-medium text-text-secondary">Warna Aksen</p>
+        {activeColor !== DEFAULT_ACCENT && (
+          <button
+            onClick={handleReset}
+            className="text-[11px] text-text-muted transition-colors hover:text-text-secondary"
+          >
+            Reset ke default
+          </button>
+        )}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {ACCENT_PRESETS.map((color) => {
+          const isActive = activeColor.toLowerCase() === color.hex.toLowerCase();
+          const isLocked = !IS_PRO && color.hex !== DEFAULT_ACCENT;
+          return (
+            <button
+              key={color.hex}
+              onClick={() => handleSelect(color.hex)}
+              title={color.name}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all ${
+                isActive ? 'border-text-primary scale-110' : 'border-transparent hover:scale-105'
+              }`}
+            >
+              <span
+                className="h-6 w-6 rounded-full"
+                style={{ backgroundColor: color.hex }}
+              />
+              {isLocked && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-bg-elevated text-[8px]">
+                  🔒
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {IS_PRO && (
+        <div className="mt-3 flex gap-2">
+          <input
+            type="text"
+            value={customHex}
+            onChange={(e) => setCustomHex(e.target.value)}
+            placeholder="#hex"
+            maxLength={7}
+            className="w-24 rounded-md border border-border bg-bg-primary px-2 py-1.5 text-caption text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+          />
+          <button
+            onClick={handleCustomSubmit}
+            disabled={!customHex}
+            className="rounded-md bg-accent px-3 py-1.5 text-caption font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
+          >
+            Terapkan
+          </button>
+        </div>
+      )}
     </div>
   );
 }

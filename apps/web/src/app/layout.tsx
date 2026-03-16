@@ -75,7 +75,7 @@ export default function RootLayout({
         {/* Blocking script to prevent flash of wrong theme (FOUWT) */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=localStorage.getItem('catatan-theme')||'system';var t=p;if(p==='system'){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)}catch(e){}})()`,
+            __html: `(function(){try{var p=localStorage.getItem('catatan-theme')||'system';var t=p;if(p==='system'){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t);var a=localStorage.getItem('catatan-accent-color');if(a){document.documentElement.style.setProperty('--accent-primary',a);document.documentElement.style.setProperty('--color-accent',a)}}catch(e){}})()`,
           }}
         />
       </head>
