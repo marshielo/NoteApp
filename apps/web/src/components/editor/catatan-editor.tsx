@@ -16,6 +16,7 @@ import { InputRule } from '@tiptap/core';
 import { FloatingToolbar } from './floating-toolbar';
 import { SlashCommandMenu } from './slash-command-menu';
 import { useSlashCommand } from './extensions/use-slash-command';
+import { ImagePaste } from './extensions/image-paste';
 
 const lowlight = createLowlight(common);
 
@@ -163,6 +164,7 @@ export function CatatanEditor({
       }),
       Typography,
       CharacterCount,
+      ImagePaste,
     ],
     content: content || DEFAULT_CONTENT,
     editable,
