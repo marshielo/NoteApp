@@ -7,6 +7,8 @@ import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { useUIStore } from '@/stores/ui-store';
 import { db } from '@/lib/db';
+import { tiptapToMarkdown, tiptapToPlainText, sanitizeFilename } from '@/lib/export-utils';
+import { showToast } from '@/components/ui/toast';
 
 const APP_VERSION = '0.1.0';
 
@@ -141,6 +143,46 @@ function SettingsPageContent() {
             </div>
 
             <div className="mt-6 border-t border-border pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-caption font-medium text-text-secondary">Ekspor semua catatan</p>
+                  <p className="mt-0.5 text-[11px] text-text-muted">
+                    Unduh semua catatan sebagai file teks (.txt)
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const allNotes = await db.notes.toArray();
+                    const activeNotes = allNotes.filter((n) => !n.isDeleted);
+                    if (activeNotes.length === 0) {
+                      showToast({ message: 'Tidak ada catatan untuk diekspor' });
+                      return;
+                    }
+                    const combined = activeNotes
+                      .map((n) => {
+                        const text = tiptapToPlainText(n.content);
+                        return `=== ${n.title || 'Untitled'} ===\n\n${text}`;
+                      })
+                      .join('\n\n' + '='.repeat(40) + '\n\n');
+                    const blob = new Blob([combined], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `catatan-export-${new Date().toISOString().slice(0, 10)}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast({ message: `${activeNotes.length} catatan diekspor` });
+                  }}
+                  className="rounded-lg border border-border px-3 py-1.5 text-caption font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+                >
+                  Ekspor
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-border pt-4">
               <button
                 onClick={() => setDeleteDialogStep(1)}
                 className="text-caption font-medium text-red-500 transition-colors hover:text-red-600"

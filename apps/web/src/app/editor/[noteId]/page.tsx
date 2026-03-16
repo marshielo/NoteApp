@@ -24,6 +24,8 @@ export default function EditorPage({ params }: EditorPageProps) {
   const { noteId } = use(params);
   const [wordCount, setWordCount] = useState(0);
   const [initialContent, setInitialContent] = useState<Record<string, unknown> | null>(null);
+  const [currentContent, setCurrentContent] = useState<Record<string, unknown>>({});
+  const [noteTitle, setNoteTitle] = useState('Untitled');
   const [isLoading, setIsLoading] = useState(true);
   const [noteTags, setNoteTags] = useState<string[]>([]);
   const [isPinned, setIsPinned] = useState(false);
@@ -40,6 +42,8 @@ export default function EditorPage({ params }: EditorPageProps) {
         const note = await db.notes.get(noteId);
         if (note) {
           setInitialContent(note.content);
+          setCurrentContent(note.content);
+          setNoteTitle(note.title || 'Untitled');
           setWordCount(note.wordCount);
           setNoteTags(note.tags || []);
           setIsPinned(note.isPinned);
@@ -63,6 +67,8 @@ export default function EditorPage({ params }: EditorPageProps) {
       title: string;
     }) => {
       setWordCount(data.wordCount);
+      setCurrentContent(data.json);
+      setNoteTitle(data.title);
 
       const contentText = extractTextFromTiptapJSON(data.json);
       const wc = calculateWordCount(contentText);
@@ -124,6 +130,8 @@ export default function EditorPage({ params }: EditorPageProps) {
         moreMenu={
           <MoreMenu
             noteId={noteId}
+            noteTitle={noteTitle}
+            noteContent={currentContent}
             noteTags={noteTags}
             isPinned={isPinned}
             onTagsChange={handleTagsChange}

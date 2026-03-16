@@ -3,20 +3,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TagPicker } from './tag-picker';
+import { ExportMenu } from './export-menu';
 import { useNotesStore } from '@/stores/notes-store';
 import { showToast } from '@/components/ui/toast';
 
 interface MoreMenuProps {
   noteId: string;
+  noteTitle: string;
+  noteContent: Record<string, unknown>;
   noteTags: string[];
   isPinned: boolean;
   onTagsChange: (tags: string[]) => void;
 }
 
-export function MoreMenu({ noteId, noteTags, isPinned, onTagsChange }: MoreMenuProps) {
+export function MoreMenu({ noteId, noteTitle, noteContent, noteTags, isPinned, onTagsChange }: MoreMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [showTagPicker, setShowTagPicker] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const togglePin = useNotesStore((s) => s.togglePin);
@@ -43,6 +47,20 @@ export function MoreMenu({ noteId, noteTags, isPinned, onTagsChange }: MoreMenuP
             noteTags={noteTags}
             onClose={() => setShowTagPicker(false)}
             onTagsChange={onTagsChange}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (showExport) {
+    return (
+      <div className="relative">
+        <div className="absolute top-8 right-0 z-50">
+          <ExportMenu
+            noteTitle={noteTitle}
+            noteContent={noteContent}
+            onClose={() => setShowExport(false)}
           />
         </div>
       </div>
@@ -91,6 +109,18 @@ export function MoreMenu({ noteId, noteTags, isPinned, onTagsChange }: MoreMenuP
         } catch (err) {
           alert((err as Error).message);
         }
+      },
+    },
+    {
+      label: 'Ekspor',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 2V9M7 2L4.5 4.5M7 2L9.5 4.5M2.5 10V11.5H11.5V10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      onClick: () => {
+        setOpen(false);
+        setShowExport(true);
       },
     },
     'separator' as const,
