@@ -55,7 +55,7 @@ export function UpgradeNudge({
                 Nanti
               </button>
               <a
-                href="/#pricing"
+                href="/upgrade"
                 className="flex-1 rounded-lg bg-accent py-2.5 text-center text-caption font-medium text-white transition-colors hover:bg-accent-hover"
               >
                 Upgrade
@@ -80,7 +80,7 @@ export function UpgradeNudge({
         <p className="text-[11px] text-text-muted">{description}</p>
       </div>
       <a
-        href="/#pricing"
+        href="/upgrade"
         className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-accent-hover"
       >
         Upgrade

@@ -6,11 +6,13 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { useUIStore } from '@/stores/ui-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { db } from '@/lib/db';
 import { tiptapToMarkdown, tiptapToPlainText, sanitizeFilename } from '@/lib/export-utils';
 import { showToast } from '@/components/ui/toast';
 import { FONT_PRESETS, type FontPresetId, getSavedPreset, savePreset, loadPresetFonts, getPreset } from '@/lib/font-presets';
 import { ACCENT_PRESETS, DEFAULT_ACCENT, getSavedAccent, saveAccent, applyAccent, isValidHex } from '@/lib/accent-colors';
+import { getStatusLabel, getStatusColor, formatDate } from '@/lib/subscription';
 
 const APP_VERSION = '0.1.0';
 
@@ -27,13 +29,26 @@ function SettingsPageContent() {
   const loadNotes = useNotesStore((s) => s.loadNotes);
   const tags = useTagsStore((s) => s.tags);
   const loadTags = useTagsStore((s) => s.loadTags);
+  const user = useAuthStore((s) => s.user);
+  const isPro = user?.isPro ?? false;
 
   const [deleteDialogStep, setDeleteDialogStep] = useState(0);
+  const [subExpiresAt, setSubExpiresAt] = useState<string | null>(null);
 
   useEffect(() => {
     loadNotes();
     loadTags();
   }, [loadNotes, loadTags]);
+
+  // Fetch subscription expiry for display
+  useEffect(() => {
+    if (user && user.subscriptionStatus !== 'none') {
+      fetch('/api/subscription')
+        .then((r) => r.json())
+        .then((data) => setSubExpiresAt(data.subscription?.expires_at || null))
+        .catch(() => {});
+    }
+  }, [user]);
 
   const activeNotes = notes.filter((n) => !n.isDeleted);
   const notesCount = activeNotes.length;
@@ -101,20 +116,37 @@ function SettingsPageContent() {
           <div className="mt-4 rounded-xl border border-border bg-bg-elevated p-6">
             <div className="flex items-center justify-between">
               <div>
-                <span className="inline-block rounded-full bg-bg-tertiary px-3 py-1 text-label font-semibold text-text-secondary">
-                  FREE
+                <span className={`inline-block rounded-full px-3 py-1 text-label font-semibold ${getStatusColor(user?.subscriptionStatus || 'none')}`}>
+                  {getStatusLabel(user?.subscriptionStatus || 'none')}
                 </span>
-                <p className="mt-2 text-caption text-text-muted">
-                  Paket gratis dengan 50 catatan dan 10 tag.
-                </p>
+                {isPro && subExpiresAt && (
+                  <p className="mt-2 text-caption text-text-muted">
+                    {user?.subscriptionStatus === 'canceled' ? 'Akses berakhir' : 'Berlaku hingga'}: {formatDate(subExpiresAt)}
+                  </p>
+                )}
+                {!isPro && (
+                  <p className="mt-2 text-caption text-text-muted">
+                    Paket gratis dengan 50 catatan dan 10 tag.
+                  </p>
+                )}
               </div>
             </div>
-            <a
-              href="/#pricing"
-              className="mt-4 block rounded-lg bg-accent py-2.5 text-center text-body-ui font-medium text-white transition-colors hover:bg-accent-hover"
-            >
-              Upgrade ke Pro
-            </a>
+            {!isPro && (
+              <a
+                href="/upgrade"
+                className="mt-4 block rounded-lg bg-accent py-2.5 text-center text-body-ui font-medium text-white transition-colors hover:bg-accent-hover"
+              >
+                Upgrade ke Pro
+              </a>
+            )}
+            {isPro && (
+              <a
+                href="/upgrade"
+                className="mt-4 block rounded-lg border border-border py-2.5 text-center text-body-ui font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+              >
+                Kelola Langganan
+              </a>
+            )}
           </div>
         </section>
 
@@ -126,28 +158,32 @@ function SettingsPageContent() {
               <div className="flex items-center justify-between">
                 <span className="text-caption text-text-secondary">Catatan</span>
                 <span className="text-caption font-medium text-text-primary">
-                  {notesCount} dari 50
+                  {isPro ? notesCount : `${notesCount} dari 50`}
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-bg-tertiary">
-                <div
-                  className="h-full rounded-full bg-accent transition-all"
-                  style={{ width: `${Math.min(100, (notesCount / 50) * 100)}%` }}
-                />
-              </div>
+              {!isPro && (
+                <div className="h-2 w-full overflow-hidden rounded-full bg-bg-tertiary">
+                  <div
+                    className="h-full rounded-full bg-accent transition-all"
+                    style={{ width: `${Math.min(100, (notesCount / 50) * 100)}%` }}
+                  />
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <span className="text-caption text-text-secondary">Tag</span>
                 <span className="text-caption font-medium text-text-primary">
-                  {tagsCount} dari 10
+                  {isPro ? tagsCount : `${tagsCount} dari 10`}
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-bg-tertiary">
-                <div
-                  className="h-full rounded-full bg-accent transition-all"
-                  style={{ width: `${Math.min(100, (tagsCount / 10) * 100)}%` }}
-                />
-              </div>
+              {!isPro && (
+                <div className="h-2 w-full overflow-hidden rounded-full bg-bg-tertiary">
+                  <div
+                    className="h-full rounded-full bg-accent transition-all"
+                    style={{ width: `${Math.min(100, (tagsCount / 10) * 100)}%` }}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="mt-6 border-t border-border pt-6">
@@ -328,10 +364,11 @@ function FontPresetSelector() {
     const preset = getPreset(id);
 
     // Free users can only use Classic
-    if (!preset.isFree) {
+    const userIsPro = useAuthStore.getState().user?.isPro ?? false;
+    if (!preset.isFree && !userIsPro) {
       showToast({
         message: 'Fitur Pro — upgrade untuk font preset lainnya',
-        action: { label: 'Upgrade', onClick: () => { window.location.href = '/#pricing'; } },
+        action: { label: 'Upgrade', onClick: () => { window.location.href = '/upgrade'; } },
       });
       return;
     }
@@ -399,7 +436,7 @@ function FontPresetSelector() {
 function AccentColorPicker() {
   const [activeColor, setActiveColor] = useState(DEFAULT_ACCENT);
   const [customHex, setCustomHex] = useState('');
-  const IS_PRO = false; // TODO: wire to subscription
+  const IS_PRO = useAuthStore.getState().user?.isPro ?? false;
 
   useEffect(() => {
     const saved = getSavedAccent();
@@ -411,7 +448,7 @@ function AccentColorPicker() {
     if (!IS_PRO && hex !== DEFAULT_ACCENT) {
       showToast({
         message: 'Fitur Pro — upgrade untuk warna aksen kustom',
-        action: { label: 'Upgrade', onClick: () => { window.location.href = '/#pricing'; } },
+        action: { label: 'Upgrade', onClick: () => { window.location.href = '/upgrade'; } },
       });
       return;
     }

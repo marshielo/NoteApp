@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { initialSync, subscribeToRealtime, unsubscribeFromRealtime, setupOnlineListener } from '@/lib/sync';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { hasProAccess, type SubscriptionStatus } from '@/lib/subscription';
 
 export type UserRole = 'free' | 'pro' | 'admin';
 
@@ -11,6 +12,8 @@ interface User {
   displayName: string;
   avatarUrl: string | null;
   role: UserRole;
+  subscriptionStatus: SubscriptionStatus;
+  isPro: boolean;
 }
 
 interface AuthState {
@@ -31,13 +34,15 @@ interface AuthState {
   updatePassword: (newPassword: string) => Promise<void>;
 }
 
-function mapUser(user: SupabaseUser): User {
+function mapUser(user: SupabaseUser, role: UserRole = 'free', subscriptionStatus: SubscriptionStatus = 'none'): User {
   return {
     id: user.id,
     email: user.email || '',
     displayName: user.user_metadata?.display_name || user.user_metadata?.full_name || '',
     avatarUrl: user.user_metadata?.avatar_url || null,
-    role: 'free',
+    role,
+    subscriptionStatus,
+    isPro: hasProAccess(subscriptionStatus),
   };
 }
 
@@ -72,12 +77,13 @@ export const useAuthStore = create<AuthState>()((set) => ({
         // Fetch profile for role
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, subscription_status')
           .eq('id', user.id)
           .single();
 
-        const mapped = mapUser(user);
-        if (profile) mapped.role = profile.role as UserRole;
+        const role = (profile?.role as UserRole) || 'free';
+        const subStatus = (profile?.subscription_status as SubscriptionStatus) || 'none';
+        const mapped = mapUser(user, role, subStatus);
 
         set({ user: mapped, isAuthenticated: true, isLocalMode: false, isLoading: false });
 
