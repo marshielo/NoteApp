@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { Source_Serif_4, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import { ToastContainer } from '@/components/ui/toast';
+import { getUmamiConfig } from '@/lib/analytics';
 import './globals.css';
 
 /* -------------------------------------------------------------------------- */
@@ -65,6 +67,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const umamiConfig = getUmamiConfig();
+
   return (
     <html
       lang="id"
@@ -82,6 +86,15 @@ export default function RootLayout({
       <body className="antialiased">
         {children}
         <ToastContainer />
+        {umamiConfig && (
+          <Script
+            async
+            defer
+            src={umamiConfig.src}
+            data-website-id={umamiConfig['data-website-id']}
+            strategy="afterInteractive"
+          />
+        )}
         <script
           dangerouslySetInnerHTML={{
             __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js')})}`,
