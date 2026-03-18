@@ -1,0 +1,8 @@
+{
+  "name": "@catatan/tailwind-config",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "./styles.css": "./styles.css"
+  }
+}

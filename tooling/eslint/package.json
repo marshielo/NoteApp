@@ -1,0 +1,21 @@
+{
+  "name": "@catatan/eslint-config",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./nextjs": "./nextjs.js"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.22.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-turbo": "^2.4.4",
+    "globals": "^16.0.0",
+    "typescript-eslint": "^8.27.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
