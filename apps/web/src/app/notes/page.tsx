@@ -12,6 +12,7 @@ import { SearchBar } from '@/components/notes/search-bar';
 import { SearchResults } from '@/components/notes/search-results';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { useSearch } from '@/hooks/use-search';
 
 type Filter = 'active' | 'archived' | 'trash';
@@ -53,6 +54,7 @@ function NotesPageContent() {
   const viewMode = useUIStore((s) => s.viewMode);
   const sortOrder = useUIStore((s) => s.sortOrder);
   const hydrate = useUIStore((s) => s.hydrate);
+  const isPro = useAuthStore((s) => s.user?.isPro ?? false);
 
   const { query, debouncedQuery, results, isSearching, handleQueryChange, clearSearch } =
     useSearch(notes);
@@ -192,8 +194,8 @@ function NotesPageContent() {
           </div>
         )}
 
-        {/* Sync promotion banner (free users) */}
-        {filter === 'active' && !tagParam && filteredNotes.length > 0 && (
+        {/* Sync promotion banner (free users only) */}
+        {!isPro && filter === 'active' && !tagParam && filteredNotes.length > 0 && (
           <div className="mb-4">
             <UpgradeNudge
               trigger="sync"
