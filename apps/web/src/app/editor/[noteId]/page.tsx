@@ -3,7 +3,12 @@
 import { use, useState, useCallback, useEffect } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { EditorLayout } from '@/components/layout/editor-layout';
-import { CatatanEditor } from '@/components/editor/catatan-editor';
+import dynamic from 'next/dynamic';
+
+const CatatanEditor = dynamic(
+  () => import('@/components/editor/catatan-editor').then((m) => m.CatatanEditor),
+  { ssr: false, loading: () => <div className="mx-auto max-w-[680px] animate-pulse space-y-3 p-4"><div className="h-8 w-2/3 rounded bg-bg-tertiary" /><div className="h-4 w-full rounded bg-bg-tertiary" /><div className="h-4 w-5/6 rounded bg-bg-tertiary" /></div> }
+);
 import { WordCount } from '@/components/editor/word-count';
 import { SaveStatus } from '@/components/editor/save-status';
 import { MoreMenu } from '@/components/editor/more-menu';
