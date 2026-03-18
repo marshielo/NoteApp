@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { db, type NoteRecord } from '@/lib/db';
+import { useAuthStore } from '@/stores/auth-store';
+import { queueSync, schedulCloudSync } from '@/lib/sync';
 
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'synced' | 'error';
 
 interface UseAutoSaveOptions {
   noteId: string;
@@ -39,6 +41,13 @@ export function useAutoSave({ noteId, debounceMs = 1500 }: UseAutoSaveOptions) {
         });
         setSaveStatus('saved');
         pendingDataRef.current = null;
+
+        // Queue cloud sync for authenticated users
+        const auth = useAuthStore.getState();
+        if (auth.isAuthenticated && auth.user) {
+          queueSync(noteIdRef.current, 'update');
+          schedulCloudSync(auth.user.id);
+        }
 
         // Reset to idle after 2 seconds
         setTimeout(() => {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import { initialSync, subscribeToRealtime, unsubscribeFromRealtime, setupOnlineListener } from '@/lib/sync';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export type UserRole = 'free' | 'pro' | 'admin';
@@ -79,6 +80,11 @@ export const useAuthStore = create<AuthState>()((set) => ({
         if (profile) mapped.role = profile.role as UserRole;
 
         set({ user: mapped, isAuthenticated: true, isLocalMode: false, isLoading: false });
+
+        // Start cloud sync for authenticated users
+        initialSync(user.id);
+        subscribeToRealtime(user.id);
+        setupOnlineListener(user.id);
       } else {
         set({ user: null, isAuthenticated: false, isLocalMode: true, isLoading: false });
       }
@@ -130,6 +136,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   signOut: async () => {
+    unsubscribeFromRealtime();
     const supabase = createClient();
     await supabase.auth.signOut();
     set({ user: null, isAuthenticated: false, isLocalMode: true });

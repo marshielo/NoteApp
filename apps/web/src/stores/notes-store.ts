@@ -1,9 +1,19 @@
 import { create } from 'zustand';
 import { db, type NoteRecord } from '@/lib/db';
 import { generateId } from '@/lib/utils';
+import { queueSync, schedulCloudSync } from '@/lib/sync';
+import { useAuthStore } from '@/stores/auth-store';
 
 const FREE_NOTES_LIMIT = 50;
 const TRASH_PURGE_DAYS = 30;
+
+function syncIfAuthenticated(noteId: string, action: 'create' | 'update' | 'delete') {
+  const auth = useAuthStore.getState();
+  if (auth.isAuthenticated && auth.user) {
+    queueSync(noteId, action);
+    schedulCloudSync(auth.user.id);
+  }
+}
 
 const DEFAULT_CONTENT = {
   type: 'doc',
@@ -88,6 +98,7 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
 
     await db.notes.add(newNote);
     set({ notes: [newNote, ...state.notes] });
+    syncIfAuthenticated(id, 'create');
     return id;
   },
 
@@ -109,6 +120,7 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
         n.id === id ? { ...n, isDeleted: true, deletedAt: now, updatedAt: now } : n
       ),
     }));
+    syncIfAuthenticated(id, 'update');
   },
 
   duplicateNote: async (id) => {
@@ -153,6 +165,7 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
         n.id === id ? { ...n, isPinned, updatedAt: now } : n
       ),
     }));
+    syncIfAuthenticated(id, 'update');
   },
 
   archiveNote: async (id) => {
@@ -163,6 +176,7 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
         n.id === id ? { ...n, isArchived: true, isPinned: false, updatedAt: now } : n
       ),
     }));
+    syncIfAuthenticated(id, 'update');
   },
 
   restoreNote: async (id) => {
@@ -180,6 +194,7 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
           : n
       ),
     }));
+    syncIfAuthenticated(id, 'update');
   },
 
   permanentDelete: async (id) => {
