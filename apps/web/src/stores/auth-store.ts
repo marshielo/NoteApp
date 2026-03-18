@@ -96,15 +96,31 @@ export const useAuthStore = create<AuthState>()((set) => ({
       }
 
       // Listen for auth changes
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
+          // Fetch profile for role & subscription status
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('role, subscription_status')
+            .eq('id', session.user.id)
+            .single();
+
+          const r = (prof?.role as UserRole) || 'free';
+          const s = (prof?.subscription_status as SubscriptionStatus) || 'none';
+
           set({
-            user: mapUser(session.user),
+            user: mapUser(session.user, r, s),
             isAuthenticated: true,
             isLocalMode: false,
+            isLoading: false,
           });
+
+          // Start cloud sync for authenticated users
+          initialSync(session.user.id);
+          subscribeToRealtime(session.user.id);
+          setupOnlineListener(session.user.id);
         } else {
-          set({ user: null, isAuthenticated: false, isLocalMode: true });
+          set({ user: null, isAuthenticated: false, isLocalMode: true, isLoading: false });
         }
       });
     } catch {

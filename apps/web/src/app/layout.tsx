@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { Source_Serif_4, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import { ToastContainer } from '@/components/ui/toast';
+import { AuthProvider } from '@/components/auth/auth-provider';
 import { getUmamiConfig } from '@/lib/analytics';
 import './globals.css';
 
@@ -84,7 +85,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <ToastContainer />
         {umamiConfig && (
           <Script

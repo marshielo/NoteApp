@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useUIStore } from '@/stores/ui-store';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
@@ -35,7 +36,9 @@ export function AppShell({
 
       <div className="flex pt-14">
         {showSidebar && (
-          <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <Suspense fallback={null}>
+            <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          </Suspense>
         )}
 
         {/* Main content — offset by sidebar width on desktop when sidebar is visible */}
