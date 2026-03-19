@@ -8,9 +8,10 @@ on:
         required: true
         type: choice
         options:
+          - development
           - staging
           - production
-          - both
+          - all
 
 jobs:
   diff:
@@ -18,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        env: ${{ github.event.inputs.environment == 'both' && fromJson('["staging","production"]') || fromJson(format('["{0}"]', github.event.inputs.environment)) }}
+        env: ${{ github.event.inputs.environment == 'all' && fromJson('["development","staging","production"]') || fromJson(format('["{0}"]', github.event.inputs.environment)) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,8 +37,10 @@ jobs:
 
           if [ "${{ matrix.env }}" = "production" ]; then
             DB_URL="${{ secrets.PRODUCTION_DB_URL }}"
-          else
+          elif [ "${{ matrix.env }}" = "staging" ]; then
             DB_URL="${{ secrets.STAGING_DB_URL }}"
+          else
+            DB_URL="${{ secrets.DEV_DB_URL }}"
           fi
 
           DIFF=$(supabase db diff --use-migra --db-url "$DB_URL" 2>&1) || true
