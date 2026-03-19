@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { useUIStore, type ViewMode, type SortOrder } from '@/stores/ui-store';
+import { useUIStore, type SortOrder } from '@/stores/ui-store';
 
 const sortOptions: { value: SortOrder; label: string }[] = [
   { value: 'lastEdited', label: 'Terakhir diedit' },

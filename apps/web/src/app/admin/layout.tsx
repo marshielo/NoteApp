@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -14,16 +14,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading } = useAuthStore();
-  const [authorized, setAuthorized] = useState(false);
+  const authorized = useMemo(
+    () => !isLoading && isAuthenticated && user?.role === 'admin',
+    [isLoading, isAuthenticated, user]
+  );
 
   useEffect(() => {
-    if (isLoading) return;
-    if (!isAuthenticated || user?.role !== 'admin') {
+    if (!isLoading && !authorized) {
       router.replace('/notes');
-      return;
     }
-    setAuthorized(true);
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isLoading, authorized, router]);
 
   if (isLoading || !authorized) {
     return (

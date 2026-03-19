@@ -25,7 +25,11 @@ export function useAutoSave({ noteId, debounceMs = 1500 }: UseAutoSaveOptions) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const pendingDataRef = useRef<Partial<NoteRecord> | null>(null);
   const noteIdRef = useRef(noteId);
-  noteIdRef.current = noteId;
+
+  // Keep noteIdRef in sync with the prop
+  useEffect(() => {
+    noteIdRef.current = noteId;
+  }, [noteId]);
 
   const saveToIndexedDB = useCallback(
     async (data: Partial<NoteRecord>) => {

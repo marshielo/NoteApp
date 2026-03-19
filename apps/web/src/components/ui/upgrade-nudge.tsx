@@ -15,13 +15,8 @@ interface UpgradeNudgeProps {
   onDismiss?: () => void;
 }
 
-export function UpgradeNudge({
-  trigger,
-  title,
-  description,
-  variant = 'banner',
-  onDismiss,
-}: UpgradeNudgeProps) {
+export function UpgradeNudge(props: UpgradeNudgeProps) {
+  const { title, description, variant = 'banner', onDismiss } = props;
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;

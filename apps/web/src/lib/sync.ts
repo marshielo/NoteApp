@@ -204,8 +204,6 @@ async function processSyncQueue(userId: string): Promise<void> {
 
   store.setStatus('syncing');
 
-  const supabase = createClient();
-
   for (const item of queue) {
     try {
       if (item.action === 'delete') {
