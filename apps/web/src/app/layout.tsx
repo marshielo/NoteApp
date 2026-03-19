@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Source_Serif_4, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import { ToastContainer } from '@/components/ui/toast';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { EnvBadge } from '@/components/ui/env-badge';
 import { getUmamiConfig } from '@/lib/analytics';
 import './globals.css';
 
@@ -89,6 +90,7 @@ export default function RootLayout({
           {children}
         </AuthProvider>
         <ToastContainer />
+        <EnvBadge />
         {umamiConfig && (
           <Script
             async

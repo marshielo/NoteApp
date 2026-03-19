@@ -26,7 +26,7 @@ function isEnabled(): boolean {
   return (
     typeof window !== 'undefined' &&
     !!process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID &&
-    process.env.NODE_ENV === 'production'
+    process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true'
   );
 }
 

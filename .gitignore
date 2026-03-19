@@ -9,12 +9,13 @@ dist
 out
 *.tsbuildinfo
 
-# Environment
-.env
+# Environment — local overrides (contain secrets, NEVER committed)
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+
+# NOTE: .env.development, .env.staging, .env.production ARE committed
+# They contain only non-sensitive defaults (feature flags, env labels).
+# All secrets (API keys, tokens) go in .env.local or Vercel Dashboard.
 
 # IDE
 .idea

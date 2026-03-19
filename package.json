@@ -4,6 +4,8 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "build:staging": "NEXT_PUBLIC_APP_ENV=staging turbo build",
+    "build:prod": "NEXT_PUBLIC_APP_ENV=production turbo build",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "clean": "turbo clean",
