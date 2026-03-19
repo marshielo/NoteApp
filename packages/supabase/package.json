@@ -4,9 +4,16 @@
   "private": true,
   "scripts": {
     "db:migrate": "supabase db push",
+    "db:migrate:staging": "supabase db push --db-url $STAGING_DB_URL",
+    "db:migrate:prod": "supabase db push --db-url $PRODUCTION_DB_URL",
     "db:reset": "supabase db reset",
-    "db:diff": "supabase db diff",
+    "db:diff": "supabase db diff --use-migra",
+    "db:diff:staging": "supabase db diff --use-migra --db-url $STAGING_DB_URL",
+    "db:diff:prod": "supabase db diff --use-migra --db-url $PRODUCTION_DB_URL",
     "db:seed": "supabase db seed",
-    "gen:types": "supabase gen types typescript --local > src/types.ts"
+    "db:status": "node scripts/db-status.mjs",
+    "gen:types": "supabase gen types typescript --local > src/types.ts",
+    "gen:types:staging": "supabase gen types typescript --db-url $STAGING_DB_URL > src/types.ts",
+    "gen:types:prod": "supabase gen types typescript --db-url $PRODUCTION_DB_URL > src/types.ts"
   }
 }
