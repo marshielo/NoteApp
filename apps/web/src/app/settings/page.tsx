@@ -5,10 +5,9 @@ import { AppShell } from '@/components/layout/app-shell';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
-import { useUIStore } from '@/stores/ui-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { db } from '@/lib/db';
-import { tiptapToMarkdown, tiptapToPlainText, sanitizeFilename } from '@/lib/export-utils';
+import { tiptapToPlainText } from '@/lib/export-utils';
 import { showToast } from '@/components/ui/toast';
 import { FONT_PRESETS, type FontPresetId, getSavedPreset, savePreset, loadPresetFonts, getPreset } from '@/lib/font-presets';
 import { ACCENT_PRESETS, DEFAULT_ACCENT, getSavedAccent, saveAccent, applyAccent, isValidHex } from '@/lib/accent-colors';
@@ -304,12 +303,12 @@ function SettingsPageContent() {
 /* ---- Theme Selector sub-component ---- */
 
 function ThemeSelector() {
-  const [theme, setTheme] = useState<string>('system');
-
-  useEffect(() => {
-    const stored = localStorage.getItem('catatan-theme') || 'system';
-    setTheme(stored);
-  }, []);
+  const [theme, setTheme] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('catatan-theme') || 'system';
+    }
+    return 'system';
+  });
 
   const handleTheme = (value: string) => {
     setTheme(value);
@@ -354,11 +353,7 @@ function ThemeSelector() {
 /* ---- Font Preset Selector sub-component ---- */
 
 function FontPresetSelector() {
-  const [activePreset, setActivePreset] = useState<FontPresetId>('classic');
-
-  useEffect(() => {
-    setActivePreset(getSavedPreset());
-  }, []);
+  const [activePreset, setActivePreset] = useState<FontPresetId>(() => getSavedPreset());
 
   const handleSelect = (id: FontPresetId) => {
     const preset = getPreset(id);

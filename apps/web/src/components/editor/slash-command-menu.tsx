@@ -128,13 +128,19 @@ export function SlashCommandMenu({
     [editor, onClose, triggerPos]
   );
 
-  // Track typed characters after "/" for filtering
-  useEffect(() => {
-    if (!isOpen) {
+  // Reset filter/selection when menu closes (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(isOpen);
+  if (prevOpen !== isOpen) {
+    setPrevOpen(isOpen);
+    if (prevOpen && !isOpen) {
       setFilter('');
       setSelectedIndex(0);
-      return;
     }
+  }
+
+  // Track typed characters after "/" for filtering
+  useEffect(() => {
+    if (!isOpen) return;
 
     const handler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

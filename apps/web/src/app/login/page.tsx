@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       await signInWithEmail(email, password);
       router.push('/notes');
-    } catch (err) {
+    } catch {
       setError('Email atau password salah');
     } finally {
       setLoading(false);

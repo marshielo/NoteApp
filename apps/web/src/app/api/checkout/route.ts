@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     // Handle trial activation
     if (action === 'trial') {
-      return handleTrialActivation(user.id, user.email!);
+      return handleTrialActivation(user.id);
     }
 
     // Handle payment checkout
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function handleTrialActivation(userId: string, email: string) {
+async function handleTrialActivation(userId: string) {
   const admin = createAdminClient();
 
   // Check if user already had a trial

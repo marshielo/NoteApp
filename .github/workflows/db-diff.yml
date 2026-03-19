@@ -1,0 +1,58 @@
+name: Database Diff
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to diff against local migrations'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+          - both
+
+jobs:
+  diff:
+    name: Diff ${{ matrix.env }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: ${{ github.event.inputs.environment == 'both' && fromJson('["staging","production"]') || fromJson(format('["{0}"]', github.event.inputs.environment)) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Generate diff
+        id: diff
+        working-directory: packages/supabase
+        run: |
+          echo "## 🗄️ Database Diff — ${{ matrix.env }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ matrix.env }}" = "production" ]; then
+            DB_URL="${{ secrets.PRODUCTION_DB_URL }}"
+          else
+            DB_URL="${{ secrets.STAGING_DB_URL }}"
+          fi
+
+          DIFF=$(supabase db diff --use-migra --db-url "$DB_URL" 2>&1) || true
+
+          if [ -z "$DIFF" ] || echo "$DIFF" | grep -q "No changes"; then
+            echo "✅ No schema differences found." >> $GITHUB_STEP_SUMMARY
+            echo "status=clean" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Schema differences detected:" >> $GITHUB_STEP_SUMMARY
+            echo '```sql' >> $GITHUB_STEP_SUMMARY
+            echo "$DIFF" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "status=drift" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Warn on drift
+        if: steps.diff.outputs.status == 'drift'
+        run: echo "::warning::Schema drift detected in ${{ matrix.env }}! Review the diff in the job summary."

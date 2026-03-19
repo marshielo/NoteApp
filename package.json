@@ -4,10 +4,17 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "build:staging": "NEXT_PUBLIC_APP_ENV=staging turbo build",
+    "build:prod": "NEXT_PUBLIC_APP_ENV=production turbo build",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "clean": "turbo clean",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "db:status": "pnpm --filter @catatan/supabase db:status",
+    "db:diff": "pnpm --filter @catatan/supabase db:diff",
+    "db:migrate": "pnpm --filter @catatan/supabase db:migrate",
+    "db:migrate:staging": "pnpm --filter @catatan/supabase db:migrate:staging",
+    "db:migrate:prod": "pnpm --filter @catatan/supabase db:migrate:prod"
   },
   "devDependencies": {
     "prettier": "^3.5.3",

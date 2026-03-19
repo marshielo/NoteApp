@@ -1,0 +1,84 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, staging]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel in-progress deployments
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # ─────────────────────────────────────────────────
+  # Deploy to Vercel
+  # ─────────────────────────────────────────────────
+  deploy:
+    name: Deploy to ${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          fi
+
+      - name: Build
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          fi
+
+      - name: Deploy
+        id: deploy
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          else
+            URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          fi
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "🚀 Deployed to: $URL"
+
+  # ─────────────────────────────────────────────────
+  # Run database migrations after deploy
+  # ─────────────────────────────────────────────────
+  migrate:
+    name: Run Migrations (${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }})
+    runs-on: ubuntu-latest
+    needs: deploy
+    # Only run if migration files changed
+    if: contains(github.event.head_commit.message, '[migrate]') || contains(github.event.head_commit.message, 'feat(schema)')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Run migrations
+        working-directory: packages/supabase
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "🗄️ Migrating PRODUCTION database..."
+            supabase db push --db-url "${{ secrets.PRODUCTION_DB_URL }}"
+          else
+            echo "🗄️ Migrating STAGING database..."
+            supabase db push --db-url "${{ secrets.STAGING_DB_URL }}"
+          fi
