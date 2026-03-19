@@ -36,7 +36,7 @@ interface CloudNote {
 function cloudToLocal(cloud: CloudNote): NoteRecord {
   return {
     id: cloud.id,
-    userId: cloud.user_id,
+    userId: cloud.user_id, // Use the actual auth user_id for IndexedDB filtering
     title: cloud.title,
     content: cloud.content,
     contentText: cloud.content_text,
@@ -101,8 +101,8 @@ export async function initialSync(userId: string): Promise<void> {
 
     if (error) throw error;
 
-    // 2. Get all local notes
-    const localNotes = await db.notes.toArray();
+    // 2. Get local notes belonging to this user only
+    const localNotes = await db.notes.where('userId').equals(userId).toArray();
 
     // 3. Create maps for efficient lookup
     const cloudMap = new Map<string, CloudNote>();

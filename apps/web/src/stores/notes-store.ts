@@ -7,6 +7,12 @@ import { useAuthStore } from '@/stores/auth-store';
 const FREE_NOTES_LIMIT = 50;
 const TRASH_PURGE_DAYS = 30;
 
+/** Get the current userId — returns the auth user id, or 'local' for unauthenticated users. */
+function getCurrentUserId(): string {
+  const auth = useAuthStore.getState();
+  return auth.isAuthenticated && auth.user ? auth.user.id : 'local';
+}
+
 function syncIfAuthenticated(noteId: string, action: 'create' | 'update' | 'delete') {
   const auth = useAuthStore.getState();
   if (auth.isAuthenticated && auth.user) {
@@ -56,7 +62,12 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
   loadNotes: async () => {
     set({ isLoading: true, error: null });
     try {
-      const notes = await db.notes.reverse().sortBy('lastEditedAt');
+      const uid = getCurrentUserId();
+      const notes = await db.notes
+        .where('userId')
+        .equals(uid)
+        .reverse()
+        .sortBy('lastEditedAt');
       set({ notes, isLoading: false });
     } catch (err) {
       set({ error: (err as Error).message, isLoading: false });
@@ -65,9 +76,11 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
 
   createNote: async () => {
     const state = get();
+    const auth = useAuthStore.getState();
+    const isPro = auth.user?.isPro ?? false;
     const activeNotes = state.notes.filter((n) => !n.isDeleted);
 
-    if (activeNotes.length >= FREE_NOTES_LIMIT) {
+    if (!isPro && activeNotes.length >= FREE_NOTES_LIMIT) {
       throw new Error(
         `Kamu sudah mencapai batas ${FREE_NOTES_LIMIT} catatan. Upgrade ke Pro untuk catatan tak terbatas.`
       );
@@ -75,10 +88,11 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
 
     const id = generateId();
     const now = new Date().toISOString();
+    const uid = getCurrentUserId();
 
     const newNote: NoteRecord = {
       id,
-      userId: null,
+      userId: uid,
       title: 'Untitled',
       content: DEFAULT_CONTENT,
       contentText: '',
@@ -128,8 +142,10 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
     const source = state.notes.find((n) => n.id === id);
     if (!source) throw new Error('Note not found');
 
+    const auth = useAuthStore.getState();
+    const isPro = auth.user?.isPro ?? false;
     const activeNotes = state.notes.filter((n) => !n.isDeleted);
-    if (activeNotes.length >= FREE_NOTES_LIMIT) {
+    if (!isPro && activeNotes.length >= FREE_NOTES_LIMIT) {
       throw new Error(
         `Kamu sudah mencapai batas ${FREE_NOTES_LIMIT} catatan. Upgrade ke Pro untuk catatan tak terbatas.`
       );
@@ -137,9 +153,11 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
 
     const newId = generateId();
     const now = new Date().toISOString();
+    const uid = getCurrentUserId();
     const duplicate: NoteRecord = {
       ...source,
       id: newId,
+      userId: uid,
       title: source.title ? `${source.title} (copy)` : 'Untitled (copy)',
       isPinned: false,
       lastEditedAt: now,
