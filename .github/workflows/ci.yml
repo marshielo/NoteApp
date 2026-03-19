@@ -43,14 +43,18 @@ jobs:
         run: pnpm type-check
 
   # ─────────────────────────────────────────────────
-  # Build — verifies the app builds successfully
+  # Build — verifies the app builds for each env
   # ─────────────────────────────────────────────────
   build:
-    name: Build
+    name: Build (${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/staging' && 'staging' || 'development' }})
     runs-on: ubuntu-latest
     needs: quality
     env:
-      NEXT_PUBLIC_APP_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      NEXT_PUBLIC_APP_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/staging' && 'staging' || 'development' }}
+      NEXT_PUBLIC_ENABLE_ANALYTICS: ${{ github.ref == 'refs/heads/main' && 'true' || github.ref == 'refs/heads/staging' && 'true' || 'false' }}
+      NEXT_PUBLIC_ENABLE_CLOUD_SYNC: ${{ github.ref == 'refs/heads/dev' && 'false' || 'true' }}
+      NEXT_PUBLIC_ENABLE_PAYMENTS: ${{ github.ref == 'refs/heads/dev' && 'false' || 'true' }}
+      NEXT_PUBLIC_DEBUG_MODE: ${{ github.ref == 'refs/heads/main' && 'false' || 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,7 +79,7 @@ jobs:
         with:
           name: build-${{ env.NEXT_PUBLIC_APP_ENV }}
           path: apps/web/.next
-          retention-days: 3
+          retention-days: ${{ github.ref == 'refs/heads/main' && 7 || 3 }}
 
   # ─────────────────────────────────────────────────
   # Migration check — warns if schema changes detected

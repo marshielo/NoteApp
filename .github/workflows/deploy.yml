@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, staging, dev]
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -17,10 +17,10 @@ jobs:
   # Deploy to Vercel
   # ─────────────────────────────────────────────────
   deploy:
-    name: Deploy to ${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }}
+    name: Deploy to ${{ github.ref == 'refs/heads/main' && 'Production' || github.ref == 'refs/heads/staging' && 'Staging' || 'Development' }}
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/staging' && 'staging' || 'development' }}
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
@@ -55,11 +55,24 @@ jobs:
           echo "url=$URL" >> $GITHUB_OUTPUT
           echo "🚀 Deployed to: $URL"
 
+      # Set Vercel alias for staging/dev to get stable preview URLs
+      - name: Set Preview Alias
+        if: github.ref != 'refs/heads/main'
+        run: |
+          DEPLOY_URL="${{ steps.deploy.outputs.url }}"
+          if [ "${{ github.ref }}" = "refs/heads/staging" ]; then
+            vercel alias set "$DEPLOY_URL" catatan-staging.vercel.app --token=${{ secrets.VERCEL_TOKEN }} || true
+            echo "🔗 Aliased to: catatan-staging.vercel.app"
+          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
+            vercel alias set "$DEPLOY_URL" catatan-dev.vercel.app --token=${{ secrets.VERCEL_TOKEN }} || true
+            echo "🔗 Aliased to: catatan-dev.vercel.app"
+          fi
+
   # ─────────────────────────────────────────────────
   # Run database migrations after deploy
   # ─────────────────────────────────────────────────
   migrate:
-    name: Run Migrations (${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }})
+    name: Run Migrations (${{ github.ref == 'refs/heads/main' && 'Production' || github.ref == 'refs/heads/staging' && 'Staging' || 'Development' }})
     runs-on: ubuntu-latest
     needs: deploy
     # Only run if migration files changed
@@ -78,7 +91,10 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "🗄️ Migrating PRODUCTION database..."
             supabase db push --db-url "${{ secrets.PRODUCTION_DB_URL }}"
-          else
+          elif [ "${{ github.ref }}" = "refs/heads/staging" ]; then
             echo "🗄️ Migrating STAGING database..."
             supabase db push --db-url "${{ secrets.STAGING_DB_URL }}"
+          else
+            echo "🗄️ Migrating DEVELOPMENT database..."
+            supabase db push --db-url "${{ secrets.DEV_DB_URL }}"
           fi
