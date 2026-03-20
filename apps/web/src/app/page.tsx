@@ -138,11 +138,11 @@ const faqs = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary">
+    <div className="font-landing min-h-screen bg-bg-primary text-text-primary">
       {/* Navigation */}
       <header className="sticky top-0 z-40 border-b border-border bg-bg-primary/80 backdrop-blur-md">
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 lg:px-8">
-          <Link href="/" className="font-source-serif text-xl font-bold text-text-primary">
+          <Link href="/" className="text-xl font-bold text-text-primary">
             Catatan
           </Link>
           <div className="flex items-center gap-3">
@@ -164,7 +164,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-4 pb-20 pt-16 text-center lg:px-8 lg:pt-24">
-        <h1 className="mx-auto max-w-3xl font-source-serif text-4xl font-extrabold leading-tight tracking-tight text-text-primary md:text-5xl lg:text-6xl">
+        <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-text-primary md:text-5xl lg:text-6xl">
           Tulis Ide-Idemu dengan{' '}
           <span className="text-accent">Indah</span>
         </h1>
@@ -195,7 +195,7 @@ export default function LandingPage() {
             <span className="ml-3 text-caption text-text-muted">catatan.app</span>
           </div>
           <div className="p-8 text-left md:p-12">
-            <div className="mb-6 font-source-serif text-2xl font-bold text-text-primary md:text-3xl">
+            <div className="mb-6 text-2xl font-bold text-text-primary md:text-3xl">
               Ide Besar Dimulai dari Catatan Kecil
             </div>
             <div className="space-y-3 text-text-secondary">
@@ -219,7 +219,7 @@ export default function LandingPage() {
       {/* Features */}
       <section className="border-t border-border bg-bg-secondary py-20">
         <div className="mx-auto max-w-6xl px-4 lg:px-8">
-          <h2 className="text-center font-source-serif text-3xl font-bold text-text-primary md:text-4xl">
+          <h2 className="text-center text-3xl font-bold text-text-primary md:text-4xl">
             Kenapa Catatan?
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-body-ui text-text-secondary">
@@ -243,7 +243,7 @@ export default function LandingPage() {
       {/* Pricing */}
       <section id="pricing" className="py-20">
         <div className="mx-auto max-w-6xl px-4 lg:px-8">
-          <h2 className="text-center font-source-serif text-3xl font-bold text-text-primary md:text-4xl">
+          <h2 className="text-center text-3xl font-bold text-text-primary md:text-4xl">
             Harga Simpel, Tanpa Kejutan
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-body-ui text-text-secondary">
@@ -254,7 +254,7 @@ export default function LandingPage() {
             <div className="rounded-xl border border-border bg-bg-elevated p-8">
               <h3 className="text-body-ui font-semibold text-text-secondary">Free</h3>
               <div className="mt-4">
-                <span className="font-source-serif text-4xl font-bold text-text-primary">Rp 0</span>
+                <span className="text-4xl font-bold text-text-primary">Rp 0</span>
                 <span className="text-caption text-text-muted"> / selamanya</span>
               </div>
               <p className="mt-3 text-caption text-text-secondary">
@@ -290,7 +290,7 @@ export default function LandingPage() {
               </span>
               <h3 className="text-body-ui font-semibold text-accent">Pro</h3>
               <div className="mt-4">
-                <span className="font-source-serif text-4xl font-bold text-text-primary">Rp 39rb</span>
+                <span className="text-4xl font-bold text-text-primary">Rp 39rb</span>
                 <span className="text-caption text-text-muted"> / bulan</span>
               </div>
               <p className="mt-1 text-caption text-text-muted">
@@ -329,7 +329,7 @@ export default function LandingPage() {
       {/* FAQ */}
       <section className="border-t border-border bg-bg-secondary py-20">
         <div className="mx-auto max-w-3xl px-4 lg:px-8">
-          <h2 className="text-center font-source-serif text-3xl font-bold text-text-primary md:text-4xl">
+          <h2 className="text-center text-3xl font-bold text-text-primary md:text-4xl">
             Pertanyaan yang Sering Ditanyakan
           </h2>
           <div className="mt-12">
@@ -341,7 +341,7 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="py-20">
         <div className="mx-auto max-w-3xl px-4 text-center lg:px-8">
-          <h2 className="font-source-serif text-3xl font-bold text-text-primary md:text-4xl">
+          <h2 className="text-3xl font-bold text-text-primary md:text-4xl">
             Siap Mulai Menulis?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-body-ui text-text-secondary">
@@ -361,7 +361,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 lg:px-8">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <span className="font-source-serif text-lg font-bold text-text-primary">Catatan</span>
+              <span className="text-lg font-bold text-text-primary">Catatan</span>
               <p className="mt-3 text-caption text-text-muted">
                 Aplikasi catatan yang indah dan simpel untuk menulis ide-idemu.
               </p>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { Source_Serif_4, DM_Sans, JetBrains_Mono } from 'next/font/google';
+import { Source_Serif_4, DM_Sans, JetBrains_Mono, PT_Serif } from 'next/font/google';
 import { ToastContainer } from '@/components/ui/toast';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { EnvBadge } from '@/components/ui/env-badge';
@@ -30,6 +30,13 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
   display: 'swap',
   weight: ['400', '500', '700'],
+});
+
+const ptSerif = PT_Serif({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-pt-serif',
+  display: 'swap',
+  weight: ['400', '700'],
 });
 
 /* -------------------------------------------------------------------------- */
@@ -75,7 +82,7 @@ export default function RootLayout({
     <html
       lang="id"
       suppressHydrationWarning
-      className={`${sourceSerif.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
+      className={`${sourceSerif.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${ptSerif.variable}`}
     >
       <head>
         {/* Blocking script to prevent flash of wrong theme (FOUWT) */}

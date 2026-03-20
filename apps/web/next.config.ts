@@ -20,6 +20,16 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', // Google OAuth avatars
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co', // Supabase Storage
+      },
+    ],
   },
 
   // Environment-aware logging
