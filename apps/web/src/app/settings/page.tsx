@@ -1,6 +1,8 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { AppShell } from '@/components/layout/app-shell';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useNotesStore } from '@/stores/notes-store';
@@ -24,14 +26,19 @@ export default function SettingsPage() {
 }
 
 function SettingsPageContent() {
+  const router = useRouter();
   const notes = useNotesStore((s) => s.notes);
   const loadNotes = useNotesStore((s) => s.loadNotes);
   const tags = useTagsStore((s) => s.tags);
   const loadTags = useTagsStore((s) => s.loadTags);
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const signOut = useAuthStore((s) => s.signOut);
   const isPro = user?.isPro ?? false;
 
   const [deleteDialogStep, setDeleteDialogStep] = useState(0);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [subExpiresAt, setSubExpiresAt] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,6 +60,17 @@ function SettingsPageContent() {
   const notesCount = activeNotes.length;
   const tagsCount = tags.length;
 
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut();
+      router.push('/login');
+    } catch {
+      showToast({ message: 'Gagal keluar. Coba lagi.' });
+      setIsLoggingOut(false);
+    }
+  };
+
   const handleDeleteAllData = async () => {
     await db.notes.clear();
     await db.tags.clear();
@@ -69,29 +87,64 @@ function SettingsPageContent() {
         <section className="mt-8">
           <h2 className="text-body-ui font-semibold text-text-primary">Profil</h2>
           <div className="mt-4 rounded-xl border border-border bg-bg-elevated p-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 text-xl font-bold text-accent">
-                ?
-              </div>
-              <div className="flex-1">
-                <p className="text-body-ui font-medium text-text-primary">Pengguna Lokal</p>
-                <p className="text-caption text-text-muted">
-                  Mode lokal — data tersimpan di perangkat ini
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 rounded-lg bg-bg-tertiary px-4 py-3">
-              <p className="text-caption text-text-secondary">
-                <a href="/login" className="font-medium text-accent hover:text-accent-hover">
-                  Masuk
-                </a>{' '}
-                atau{' '}
-                <a href="/register" className="font-medium text-accent hover:text-accent-hover">
-                  daftar
-                </a>{' '}
-                untuk menyinkronkan catatan ke cloud dan mengakses dari perangkat lain.
-              </p>
-            </div>
+            {isAuthenticated && user ? (
+              <>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 text-xl font-bold text-accent">
+                    {user.avatarUrl ? (
+                      <Image src={user.avatarUrl} alt="" width={56} height={56} className="h-14 w-14 rounded-full object-cover" />
+                    ) : (
+                      (user.displayName || user.email).charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-body-ui font-medium text-text-primary">
+                      {user.displayName || 'User'}
+                    </p>
+                    <p className="text-caption text-text-muted">{user.email}</p>
+                  </div>
+                  {isPro && (
+                    <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-bold text-accent">
+                      PRO
+                    </span>
+                  )}
+                </div>
+                <div className="mt-6 border-t border-border pt-4">
+                  <button
+                    onClick={() => setShowLogoutDialog(true)}
+                    className="w-full rounded-lg border border-red-300 py-2.5 text-center text-body-ui font-medium text-red-500 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10"
+                  >
+                    Keluar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 text-xl font-bold text-accent">
+                    ?
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-body-ui font-medium text-text-primary">Pengguna Lokal</p>
+                    <p className="text-caption text-text-muted">
+                      Mode lokal — data tersimpan di perangkat ini
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-lg bg-bg-tertiary px-4 py-3">
+                  <p className="text-caption text-text-secondary">
+                    <a href="/login" className="font-medium text-accent hover:text-accent-hover">
+                      Masuk
+                    </a>{' '}
+                    atau{' '}
+                    <a href="/register" className="font-medium text-accent hover:text-accent-hover">
+                      daftar
+                    </a>{' '}
+                    untuk menyinkronkan catatan ke cloud dan mengakses dari perangkat lain.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -276,6 +329,16 @@ function SettingsPageContent() {
           </div>
         </section>
       </div>
+
+      {/* Logout confirmation */}
+      <ConfirmDialog
+        open={showLogoutDialog}
+        title="Keluar dari akun?"
+        message="Kamu akan keluar dari akunmu. Catatan lokal tetap tersimpan di perangkat ini."
+        confirmLabel={isLoggingOut ? 'Sedang keluar...' : 'Ya, Keluar'}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutDialog(false)}
+      />
 
       {/* Delete data — step 1 */}
       <ConfirmDialog
