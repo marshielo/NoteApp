@@ -86,10 +86,10 @@ export function CatatanEditor({
         placeholder: ({ node }) => {
           if (node.type.name === 'heading') {
             const level = node.attrs.level as number;
-            if (level === 1) return 'Untitled';
+            if (level === 1) return 'Title';
             return `Heading ${level}`;
           }
-          return "Ketik '/' untuk melihat opsi...";
+          return 'Tulis ceritamu...';
         },
       }),
       Image.configure({
@@ -170,7 +170,7 @@ export function CatatanEditor({
     editable,
     editorProps: {
       attributes: {
-        class: 'catatan-editor focus:outline-none min-h-[calc(100vh-180px)]',
+        class: 'catatan-editor focus:outline-none focus-visible:outline-none min-h-[calc(100vh-180px)]',
       },
       handleKeyDown: (_view, event) => {
         return handleSlashKeyDown(event);
