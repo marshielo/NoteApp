@@ -34,6 +34,7 @@ function SettingsPageContent() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const signOut = useAuthStore((s) => s.signOut);
+  const refreshProfile = useAuthStore((s) => s.refreshProfile);
   const isPro = user?.isPro ?? false;
 
   const [deleteDialogStep, setDeleteDialogStep] = useState(0);
@@ -44,7 +45,9 @@ function SettingsPageContent() {
   useEffect(() => {
     loadNotes();
     loadTags();
-  }, [loadNotes, loadTags]);
+    // Re-fetch profile from DB to pick up subscription changes (e.g. after payment)
+    refreshProfile();
+  }, [loadNotes, loadTags, refreshProfile]);
 
   // Fetch subscription expiry for display
   useEffect(() => {
@@ -154,10 +157,10 @@ function SettingsPageContent() {
           <div className="mt-4 rounded-xl border border-border bg-bg-elevated p-6">
             <ThemeSelector />
             <div className="mt-6 border-t border-border pt-6">
-              <FontPresetSelector />
+              <FontPresetSelector isPro={isPro} />
             </div>
             <div className="mt-6 border-t border-border pt-6">
-              <AccentColorPicker />
+              <AccentColorPicker isPro={isPro} />
             </div>
           </div>
         </section>
@@ -415,15 +418,14 @@ function ThemeSelector() {
 
 /* ---- Font Preset Selector sub-component ---- */
 
-function FontPresetSelector() {
+function FontPresetSelector({ isPro }: { isPro: boolean }) {
   const [activePreset, setActivePreset] = useState<FontPresetId>(() => getSavedPreset());
 
   const handleSelect = (id: FontPresetId) => {
     const preset = getPreset(id);
 
     // Free users can only use Classic
-    const userIsPro = useAuthStore.getState().user?.isPro ?? false;
-    if (!preset.isFree && !userIsPro) {
+    if (!preset.isFree && !isPro) {
       showToast({
         message: 'Fitur Pro — upgrade untuk font preset lainnya',
         action: { label: 'Upgrade', onClick: () => { window.location.href = '/upgrade'; } },
@@ -491,19 +493,19 @@ function FontPresetSelector() {
 
 /* ---- Accent Color Picker sub-component ---- */
 
-function AccentColorPicker() {
-  const [activeColor, setActiveColor] = useState(DEFAULT_ACCENT);
+function AccentColorPicker({ isPro }: { isPro: boolean }) {
+  const [activeColor, setActiveColor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = getSavedAccent();
+      applyAccent(saved);
+      return saved;
+    }
+    return DEFAULT_ACCENT;
+  });
   const [customHex, setCustomHex] = useState('');
-  const IS_PRO = useAuthStore.getState().user?.isPro ?? false;
-
-  useEffect(() => {
-    const saved = getSavedAccent();
-    setActiveColor(saved);
-    applyAccent(saved);
-  }, []);
 
   const handleSelect = (hex: string) => {
-    if (!IS_PRO && hex !== DEFAULT_ACCENT) {
+    if (!isPro && hex !== DEFAULT_ACCENT) {
       showToast({
         message: 'Fitur Pro — upgrade untuk warna aksen kustom',
         action: { label: 'Upgrade', onClick: () => { window.location.href = '/upgrade'; } },
@@ -546,7 +548,7 @@ function AccentColorPicker() {
       <div className="mt-3 flex flex-wrap gap-2">
         {ACCENT_PRESETS.map((color) => {
           const isActive = activeColor.toLowerCase() === color.hex.toLowerCase();
-          const isLocked = !IS_PRO && color.hex !== DEFAULT_ACCENT;
+          const isLocked = !isPro && color.hex !== DEFAULT_ACCENT;
           return (
             <button
               key={color.hex}
@@ -569,7 +571,7 @@ function AccentColorPicker() {
           );
         })}
       </div>
-      {IS_PRO && (
+      {isPro && (
         <div className="mt-3 flex gap-2">
           <input
             type="text"

@@ -26,6 +26,7 @@ interface AuthState {
   setLocalMode: (local: boolean) => void;
   setLoading: (loading: boolean) => void;
   initialize: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -125,6 +126,30 @@ export const useAuthStore = create<AuthState>()((set) => ({
       });
     } catch {
       set({ user: null, isAuthenticated: false, isLocalMode: true, isLoading: false });
+    }
+  },
+
+  refreshProfile: async () => {
+    if (!isSupabaseConfigured()) return;
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, subscription_status')
+        .eq('id', user.id)
+        .single();
+
+      const role = (profile?.role as UserRole) || 'free';
+      const subStatus = (profile?.subscription_status as SubscriptionStatus) || 'none';
+      const mapped = mapUser(user, role, subStatus);
+
+      set({ user: mapped, isAuthenticated: true, isLocalMode: false });
+    } catch {
+      // Silently fail — keep existing state
     }
   },
 
